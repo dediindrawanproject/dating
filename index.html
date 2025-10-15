@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Connect with Singles Around You</title>
+  <meta name="description" content="Interactive pre-lander for social/dating promotions. Replace images & redirect as needed." />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --accent-1:#ff6a88;
+      --accent-2:#ff99ac;
+      --glass: rgba(255,255,255,0.12);
+      --text:#ffffff;
+      --radius:16px;
+      --max-width:520px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:20px;
+      font-family:"Poppins",system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
+      background: linear-gradient(135deg,var(--accent-1),var(--accent-2));
+      color:var(--text);
+    }
+
+    .card{
+      width:100%;
+      max-width:var(--max-width);
+      background:var(--glass);
+      border-radius:var(--radius);
+      padding:20px;
+      box-shadow:0 10px 30px rgba(0,0,0,0.2);
+      backdrop-filter: blur(8px);
+    }
+
+    .hero{
+      display:flex;
+      justify-content:center;
+      gap:16px;
+      margin-bottom:14px;
+      align-items:center;
+    }
+    .profile{
+      width:110px;
+      height:110px;
+      border-radius:50%;
+      overflow:hidden;
+      flex:0 0 110px;
+      border:3px solid rgba(255,255,255,0.35);
+      background:linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+      display:inline-block;
+    }
+    .profile img{ width:100%; height:100%; object-fit:cover; display:block; }
+
+    h1{ font-size:20px; text-align:center; margin:6px 0 12px; line-height:1.15; }
+    .question{ text-align:center; margin-bottom:12px; font-size:15px; opacity:0.95; }
+    .answers{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px; }
+    .btn{ background:#fff; color:var(--accent-1); border:none; padding:12px 10px; font-weight:600; border-radius:10px; cursor:pointer; transition:transform .12s ease,opacity .12s; width:100%; }
+    .btn:hover{ transform:translateY(-3px) }
+    .single-col .answers{ grid-template-columns:1fr }
+    .loading{ display:none; text-align:center; margin-top:8px; }
+    .spinner{ width:44px; height:44px; border-radius:50%; border:4px solid rgba(255,255,255,0.28); border-top-color:#fff; margin:12px auto; animation:spin 1s linear infinite; }
+    @keyframes spin{ to{ transform:rotate(360deg) } }
+    .muted{ font-size:13px; opacity:.9; margin-top:8px }
+    footer{ margin-top:14px; text-align:center; font-size:13px; opacity:.85 }
+
+    @media (max-width:420px){
+      .hero{ gap:10px }
+      .profile{ width:86px; height:86px; flex:0 0 86px }
+      .answers{ grid-template-columns:1fr }
+      .single-col .answers{ grid-template-columns:1fr }
+    }
+  </style>
+</head>
+<body>
+  <main class="card" role="main" aria-live="polite">
+    <div class="hero" aria-hidden="false">
+      <figure class="profile" aria-hidden="false">
+        <img id="img-woman" loading="lazy"
+             src="https://via.placeholder.com/400x400.png?text=Woman+Profile"
+             alt="Woman profile - replace with your image">
+      </figure>
+      <figure class="profile" aria-hidden="false">
+        <img id="img-man" loading="lazy"
+             src="https://via.placeholder.com/400x400.png?text=Man+Profile"
+             alt="Man profile - replace with your image">
+      </figure>
+    </div>
+
+    <h1 id="title">Connect with Singles Around You</h1>
+    <p id="description" class="question">Answer a few simple questions to find matches near you.</p>
+
+    <div id="interactive">
+      <p id="questionText" class="question">Are you male or female?</p>
+
+      <div id="answers" class="answers" role="radiogroup" aria-label="Gender choice">
+        <button class="btn" onclick="nextQuestion('Male')" aria-pressed="false">Male</button>
+        <button class="btn" onclick="nextQuestion('Female')" aria-pressed="false">Female</button>
+      </div>
+
+      <div id="loading" class="loading" aria-hidden="true">
+        <div class="spinner" aria-hidden="true"></div>
+        <div id="loadingText" class="muted">Searching for singles near you...</div>
+      </div>
+    </div>
+
+    <footer>© <span id="year"></span> ConnectNow</footer>
+  </main>
+
+<script>
+  document.getElementById('year').textContent = new Date().getFullYear();
+
+  const questions = [
+    { q: "Do you want to find new friends?", a: ["Yes","No"] },
+    { q: "Would you like to discover people nearby?", a: ["Yes","Absolutely!"] },
+    { q: "Ready to join?", a: ["Continue Now"] }
+  ];
+
+  let step = 0;
+  const qEl = document.getElementById('questionText');
+  const answersEl = document.getElementById('answers');
+  const loadingEl = document.getElementById('loading');
+
+  function nextQuestion(choice) {
+    console.log('choice', step, choice);
+
+    if (step < questions.length) {
+      const obj = questions[step];
+      qEl.textContent = obj.q;
+      answersEl.classList.toggle('single-col', window.innerWidth < 420 || obj.a.length === 1);
+      answersEl.innerHTML = obj.a.map(opt => {
+        const safe = opt.replace("'", "\'");
+        return `<button class="btn" onclick="nextQuestion('${safe}')">${opt}</button>`;
+      }).join('');
+      step++;
+    } else {
+      showLoadingAndRedirect();
+    }
+  }
+
+  async function showLoadingAndRedirect() {
+    answersEl.style.display = 'none';
+    loadingEl.style.display = 'block';
+    loadingEl.setAttribute('aria-hidden','false');
+
+    await delay(3000);
+
+    try {
+      if (typeof window.getTargetUrl === 'function') {
+        safeRedirect(window.getTargetUrl());
+        return;
+      }
+
+      const res = await fetch('/redirect/target.js', {cache:'no-cache'});
+      if (!res.ok) throw new Error('Failed to fetch target');
+      const txt = await res.text();
+      const sandbox = {};
+      (new Function('window','__sandbox', txt))(window, sandbox);
+      const url = (typeof window.getTargetUrl === 'function') ? window.getTargetUrl() : (sandbox.getTargetUrl ? sandbox.getTargetUrl() : null);
+      if (url) safeRedirect(url);
+      else throw new Error('Target URL not found');
+    } catch (e) {
+      console.error(e);
+      document.getElementById('loadingText').textContent = 'An error occurred. Please try again later.';
+    }
+  }
+
+  function safeRedirect(url) {
+    if (!url || typeof url !== 'string') return;
+    const l = url.trim().toLowerCase();
+    if (l.startsWith('javascript:')) return;
+    window.location.href = url;
+  }
+
+  function delay(ms){ return new Promise(r => setTimeout(r, ms)); }
+
+  (function preloadTarget(){
+    const s = document.createElement('script');
+    s.src = '/redirect/target.js';
+    s.defer = true;
+    document.head.appendChild(s);
+  })();
+
+  function replaceImages(womanUrl, manUrl){
+    const w = document.getElementById('img-woman');
+    const m = document.getElementById('img-man');
+    if (womanUrl) w.src = womanUrl;
+    if (manUrl) m.src = manUrl;
+  }
+</script>
+</body>
+</html>
